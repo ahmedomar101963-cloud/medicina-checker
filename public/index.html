@@ -327,7 +327,7 @@ function renderResults(parsed, results, insLabel){
         <div class="section-title" style="color:var(--danger);">Not covered — exact match</div>
         ${drug.not_covered_options.map(o => `
           <div class="opt-row" style="opacity:0.65;">
-            <div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div>
+            <div><div class="opt-name">${o.package_name}${o.is_prescribed_brand ? '<span style="font-size:10px;background:#C9A84C;color:#fff;padding:2px 7px;border-radius:999px;margin-left:6px;font-weight:500;">★ Prescribed</span>' : ''}</div><div class="opt-form">${o.form}</div></div>
             <div class="opt-strength">${o.strength}</div>
           </div>`).join('')}
       </div>`;
