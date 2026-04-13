@@ -16,7 +16,6 @@
       --text: #1a1a18; --muted: #72726e;
       --danger-bg: #fdf0ee; --danger: #c0392b;
       --success-bg: #eef4e9; --success: #3a6b24;
-      --warning-bg: #fffef0; --warning: #92720a;
       --radius: 16px; --radius-sm: 10px; --radius-xs: 6px;
     }
     body { font-family: "DM Sans", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -77,6 +76,7 @@
     .rcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
     .rcard-head { display: flex; align-items: center; gap: 10px; padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); background: #fafaf8; }
     .rcard-name { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+    .rcard-written { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 6px; }
     .badge { font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 999px; flex-shrink: 0; }
     .badge-ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--green-mid); }
     .badge-no { background: var(--danger-bg); color: var(--danger); border: 1px solid #f5c6c2; }
@@ -86,10 +86,8 @@
     .opt-name { font-size: 13px; font-weight: 500; color: var(--text); }
     .opt-form { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
     .opt-strength { font-size: 12px; color: var(--muted); white-space: nowrap; background: var(--bg); padding: 3px 8px; border-radius: var(--radius-xs); }
-    .rcard-note { padding: 0.7rem 1.4rem; background: var(--warning-bg); font-size: 12px; color: var(--warning); border-top: 1px solid #f0e8c0; line-height: 1.65; }
-    .rcard-note::before { content: "Note: "; font-weight: 500; }
-    .no-match { padding: 0.7rem 1.4rem; background: var(--danger-bg); font-size: 12px; color: var(--danger); border-top: 1px solid #f5c6c2; }
-    .source-badge { font-size: 10px; color: var(--success); background: var(--success-bg); padding: 2px 8px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+    .rcard-source { padding: 0.6rem 1.4rem; background: var(--green-light); font-size: 11px; color: var(--success); border-top: 1px solid var(--green-mid); }
+    .rcard-notfound { padding: 0.7rem 1.4rem; background: var(--danger-bg); font-size: 12px; color: var(--danger); border-top: 1px solid #f5c6c2; }
     .footer { text-align: center; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
     .footer-logo-wrap { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: var(--green-light); border: 1px solid var(--green-mid); margin-bottom: 10px; }
     .footer-logo { width: 36px; height: 36px; object-fit: contain; }
@@ -169,48 +167,11 @@
   </div>
 
 <script>
-const KEY_STORAGE = "medicina_api_key";
-let b64=null, ftype=null, haadData=null;
+const KEY_STORAGE="medicina_api_key";
+let b64=null,ftype=null;
 
-async function loadHAAD() {
-  if (haadData) return haadData;
-  const r = await fetch('/haad_data.json');
-  haadData = await r.json();
-  return haadData;
-}
-
-function searchHAAD(data, genericName, insType) {
-  const query = genericName.toLowerCase().trim();
-  const words = query.split(/[,\s]+/).filter(w => w.length > 3);
-
-  // Find matches - drug must contain ALL key words
-  let matches = data.filter(d => {
-    const g = d.generic.toLowerCase();
-    return words.every(w => g.includes(w)) || g.includes(query);
-  });
-
-  if (matches.length === 0) {
-    // Try partial - at least one key ingredient
-    matches = data.filter(d => {
-      const g = d.generic.toLowerCase();
-      return words.some(w => w.length > 4 && g.includes(w));
-    });
-  }
-
-  const covered = matches.filter(d => d[insType]);
-  const notCovered = matches.filter(d => !d[insType]);
-
-  return { covered, notCovered, total: matches.length };
-}
-
-function initKey(){
-  const s=localStorage.getItem(KEY_STORAGE);
-  if(s){document.getElementById("akey").value=s;document.getElementById("key-saved").style.display="inline-flex";document.getElementById("key-clear-btn").style.display="inline";}
-}
-function onKeyInput(){
-  const v=document.getElementById("akey").value.trim();
-  if(v.startsWith("sk-ant-")&&v.length>20){localStorage.setItem(KEY_STORAGE,v);document.getElementById("key-saved").style.display="inline-flex";document.getElementById("key-clear-btn").style.display="inline";}
-}
+function initKey(){const s=localStorage.getItem(KEY_STORAGE);if(s){document.getElementById("akey").value=s;document.getElementById("key-saved").style.display="inline-flex";document.getElementById("key-clear-btn").style.display="inline";}}
+function onKeyInput(){const v=document.getElementById("akey").value.trim();if(v.startsWith("sk-ant-")&&v.length>20){localStorage.setItem(KEY_STORAGE,v);document.getElementById("key-saved").style.display="inline-flex";document.getElementById("key-clear-btn").style.display="inline";}}
 function clearKey(){localStorage.removeItem(KEY_STORAGE);document.getElementById("akey").value="";document.getElementById("key-saved").style.display="none";document.getElementById("key-clear-btn").style.display="none";}
 function ev(e,cls,add){e.preventDefault();document.getElementById("zone").classList[add?"add":"remove"](cls);}
 function drop(e){e.preventDefault();document.getElementById("zone").classList.remove("drag");const f=e.dataTransfer.files[0];if(f)pickFile(f);}
@@ -224,9 +185,15 @@ function pickFile(f){
 function rmFile(){b64=null;ftype=null;document.getElementById("zone").style.display="block";document.getElementById("fprev").style.display="none";document.getElementById("finput").value="";}
 function toggleKey(){const i=document.getElementById("akey");const s=i.type==="password";i.type=s?"text":"password";i.nextElementSibling.textContent=s?"Hide":"Show";}
 
-async function apiCall(k,messages,mx){
-  const r=await fetch("/api/proxy",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:mx||1000,messages})});
+async function claudeCall(k,messages,mx){
+  const r=await fetch("/api/proxy",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:mx||800,messages})});
   if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"API error");}
+  return r.json();
+}
+
+async function haadSearch(drugs, insurance){
+  const r=await fetch("/api/proxy",{method:"POST",headers:{"Content-Type":"application/json","x-action":"search-haad"},body:JSON.stringify({drugs,insurance})});
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"HAAD search error");}
   return r.json();
 }
 
@@ -237,136 +204,64 @@ async function runCheck(){
   if(!k){err.innerHTML='<div class="err">Please enter your Anthropic API key first.</div>';return;}
   if(!b64){err.innerHTML='<div class="err">Please upload a prescription first.</div>';return;}
   const btn=document.getElementById("cbtn");btn.disabled=true;
-  res.innerHTML='<div class="loading"><div class="spinner"></div>Reading prescription…<div class="loading-step">Extracting drugs from prescription</div></div>';
+  res.innerHTML='<div class="loading"><div class="spinner"></div>Reading prescription…<div class="loading-step">Extracting drug names</div></div>';
 
   const isImg=ftype&&ftype.startsWith("image/");const media=ftype||"application/pdf";
   try{
-    // Step 1: Extract drugs from prescription via Claude
     const content=[
       isImg?{type:"image",source:{type:"base64",media_type:media,data:b64}}:{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}},
-      {type:"text",text:"You are a UAE clinical pharmacist. Read this prescription carefully and extract:\n1. Patient full name\n2. Insurance type shown on the card (Thiqa / Basic / ABM1 / ABM7 / unknown)\n3. Each drug prescribed - provide the EXACT generic/scientific name in English as it would appear in a drug formulary\n\nIMPORTANT: For generic names, use standard INN names. For combinations, include all ingredients separated by commas.\n\nReply ONLY with valid JSON:\n{\"patient_name\":\"...\",\"insurance_type\":\"thiqa|basic|abm1|abm7|unknown\",\"drugs\":[{\"generic_name\":\"...\",\"strength\":\"...\",\"form\":\"...\",\"brand_written\":\"...or null\"}]}"}
+      {type:"text",text:"You are a UAE clinical pharmacist. Read this prescription and extract:\n1. Patient full name\n2. Insurance type (Thiqa/Basic/ABM1/ABM7/unknown)\n3. Each drug - provide the exact INN generic name in English as it appears in pharmacopoeias. For combinations list ALL active ingredients.\n\nReply ONLY with valid JSON:\n{\"patient_name\":\"...\",\"insurance_type\":\"thiqa|basic|abm1|abm7|unknown\",\"drugs\":[{\"generic_name\":\"...\",\"strength\":\"...\",\"form\":\"...\",\"brand_written\":\"...or null\"}]}"}
     ];
-    const d1=await apiCall(k,[{role:"user",content}],800);
+
+    const d1=await claudeCall(k,[{role:"user",content}],800);
     let raw1=d1.content.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
     const parsed=JSON.parse(raw1);
 
-    res.innerHTML='<div class="loading"><div class="spinner"></div>Searching HAAD formulary…<div class="loading-step">Loading official DOH drug database</div></div>';
+    res.innerHTML='<div class="loading"><div class="spinner"></div>Searching HAAD formulary…<div class="loading-step">Checking official DOH database</div></div>';
 
-    // Step 2: Load HAAD data and search
-    const haad = await loadHAAD();
-    const ins = (parsed.insurance_type||"unknown").toLowerCase();
-    const insKey = ins === 'abm1' ? 'abm1' : ins === 'abm7' ? 'abm7' : ins === 'basic' ? 'basic' : 'thiqa';
-    const insLabel = {thiqa:"Thiqa",basic:"Basic",abm1:"ABM 1",abm7:"ABM 7",unknown:"Not detected"}[ins]||ins;
+    const ins=(parsed.insurance_type||"unknown").toLowerCase();
+    const insLabel={thiqa:"Thiqa",basic:"Basic",abm1:"ABM 1",abm7:"ABM 7",unknown:"Not detected"}[ins]||ins;
 
-    // Step 3: For each drug, search HAAD + use Claude to verify match
-    const drugs = parsed.drugs || [];
-    const drugNames = drugs.map(d => d.generic_name).join(', ');
-
-    res.innerHTML=`<div class="loading"><div class="spinner"></div>Matching against HAAD formulary…<div class="loading-step">Verifying ${drugs.length} drug(s)</div></div>`;
-
-    // Use Claude to normalize generic names for better matching
-    const d2 = await apiCall(k,[{role:"user",content:`Given these drug names from a UAE prescription: ${drugNames}\n\nFor each drug, provide the best search terms to find it in the UAE DOH/HAAD formulary. Use standard INN names. For combinations list ingredients.\n\nReply ONLY with valid JSON:\n{\"normalized\":[{\"original\":\"...\",\"search_terms\":[\"term1\",\"term2\"]}]}`}],600);
-    let raw2=d2.content.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
-    const normalized = JSON.parse(raw2);
-
-    // Now search HAAD for each drug
-    const results = drugs.map((drug, i) => {
-      const norm = normalized.normalized?.[i];
-      const searchTerms = norm?.search_terms || [drug.generic_name];
-
-      let bestMatches = [];
-      for (const term of searchTerms) {
-        const found = searchHAAD(haad, term, insKey);
-        if (found.covered.length > 0 || found.notCovered.length > 0) {
-          bestMatches = found;
-          break;
-        }
-      }
-
-      if (bestMatches.length === 0) {
-        // Last resort - try first search term
-        bestMatches = searchHAAD(haad, searchTerms[0], insKey);
-      }
-
-      const covered = bestMatches.covered || [];
-      const notCovered = bestMatches.notCovered || [];
-
-      return {
-        generic_name: drug.generic_name,
-        brand_written: drug.brand_written,
-        covered: covered.length > 0,
-        covered_options: covered.slice(0, 10),
-        uncovered_options: notCovered.slice(0, 5),
-        not_found: (covered.length + notCovered.length) === 0
-      };
-    });
-
-    renderResults(parsed, results, insLabel, insKey);
+    const searchResult = await haadSearch(parsed.drugs || [], ins);
+    renderResults(parsed, searchResult.results, insLabel);
 
   }catch(e){res.innerHTML="";err.innerHTML=`<div class="err">Error: ${e.message}</div>`;}
   finally{btn.disabled=false;}
 }
 
-function renderResults(parsed, results, insLabel, insKey) {
-  const covered = results.filter(r => r.covered).length;
-  let html = `<div class="patient-banner">
+function renderResults(parsed, results, insLabel){
+  const covered=results.filter(r=>r.covered).length;
+  let html=`<div class="patient-banner">
     <div class="pinfo"><div class="pinfo-label">Patient</div><div class="pinfo-value">${parsed.patient_name||"&#8212;"}</div></div>
     <div class="pinfo"><div class="pinfo-label">Insurance</div><div class="pinfo-value">${insLabel}</div></div>
     <div class="pinfo"><div class="pinfo-label">Drugs</div><div class="pinfo-value">${results.length}</div></div>
     <div class="pinfo"><div class="pinfo-label">Covered</div><div class="pinfo-value" style="color:#3a6b24;">${covered} / ${results.length}</div></div>
   </div>`;
 
-  results.forEach(drug => {
-    const badge = drug.covered
-      ? '<span class="badge badge-ok">&#10003; Covered</span>'
-      : '<span class="badge badge-no">Not covered</span>';
+  results.forEach(drug=>{
+    const badge=drug.covered?'<span class="badge badge-ok">&#10003; Covered</span>':'<span class="badge badge-no">Not covered</span>';
+    const written=drug.brand_written&&drug.brand_written!=="null"?`<span class="rcard-written">(${drug.brand_written})</span>`:"";
 
-    let bodyHtml = '';
-
-    if (drug.not_found) {
-      bodyHtml = '<div class="no-match">No match found in HAAD formulary for this drug</div>';
-    } else if (drug.covered && drug.covered_options.length > 0) {
-      const opts = drug.covered_options.map(o =>
-        `<div class="opt-row">
-          <div>
-            <div class="opt-name">${o.pkg}</div>
-            <div class="opt-form">${o.form}</div>
-          </div>
-          <div class="opt-strength">${o.strength}</div>
-        </div>`
-      ).join('');
-      bodyHtml = `<div class="rcard-body">${opts}</div>`;
-    } else if (!drug.covered && drug.uncovered_options.length > 0) {
-      const opts = drug.uncovered_options.map(o =>
-        `<div class="opt-row">
-          <div>
-            <div class="opt-name">${o.pkg}</div>
-            <div class="opt-form">${o.form}</div>
-          </div>
-          <div class="opt-strength">${o.strength}</div>
-        </div>`
-      ).join('');
-      bodyHtml = `<div class="rcard-body" style="opacity:0.6;">${opts}</div>`;
+    let body="";
+    if(drug.not_found){
+      body=`<div class="rcard-notfound">Drug not found in HAAD formulary — may require manual verification</div>`;
+    } else {
+      const opts=drug.covered?drug.covered_options:drug.uncovered_options;
+      const rows=(opts||[]).map(o=>`<div class="opt-row"><div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div><div class="opt-strength">${o.strength}</div></div>`).join("");
+      if(rows) body=`<div class="rcard-body"${drug.covered?"":" style='opacity:0.65;'"}">${rows}</div>`;
     }
 
-    const sourceNote = drug.not_found ? '' : '<div class="rcard-note" style="background:#eef4e9;color:#3a6b24;border-color:#c8ddb8;">Source: DOH/HAAD UAE Official Formulary — March 2026</div>';
+    const source=drug.not_found?"":`<div class="rcard-source">&#10003; Source: DOH/HAAD UAE Formulary — March 2026</div>`;
 
-    html += `<div class="rcard">
-      <div class="rcard-head">
-        <div class="rcard-name">${drug.generic_name}${drug.brand_written && drug.brand_written !== 'null' ? '<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:6px;">(Written: '+drug.brand_written+')</span>' : ''}</div>
-        ${badge}
-      </div>
-      ${bodyHtml}
-      ${sourceNote}
+    html+=`<div class="rcard">
+      <div class="rcard-head"><div class="rcard-name">${drug.generic_name}${written}</div>${badge}</div>
+      ${body}${source}
     </div>`;
   });
 
-  document.getElementById("resbox").innerHTML = html;
+  document.getElementById("resbox").innerHTML=html;
 }
-
 initKey();
-// Preload HAAD data in background
-loadHAAD().catch(()=>{});
 </script>
 </body>
 </html>
