@@ -16,6 +16,7 @@
       --text: #1a1a18; --muted: #72726e;
       --danger-bg: #fdf0ee; --danger: #c0392b;
       --success-bg: #eef4e9; --success: #3a6b24;
+      --warning-bg: #fffef0; --warning: #92720a;
       --radius: 16px; --radius-sm: 10px; --radius-xs: 6px;
     }
     body { font-family: "DM Sans", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -27,7 +28,7 @@
     .logo-wrap { position: relative; width: 130px; height: 130px; margin-bottom: 18px; }
     .logo-ring { position: absolute; inset: -6px; border-radius: 50%; border: 1px solid rgba(201,168,76,0.4); }
     .logo-ring-2 { position: absolute; inset: -12px; border-radius: 50%; border: 1px solid rgba(201,168,76,0.15); }
-    .logo-bg { width: 100%; height: 100%; border-radius: 50%; background: rgba(255,255,255,0.97); box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+    .logo-bg { width: 100%; height: 100%; border-radius: 50%; background: rgba(255,255,255,0.97); box-shadow: 0 8px 40px rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; }
     .hero-logo { width: 105px; height: 105px; object-fit: contain; padding: 8px; }
     .ornament { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .ornament-line { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
@@ -56,18 +57,18 @@
     .key-toggle { font-size: 12px; font-weight: 500; color: var(--green); cursor: pointer; background: none; border: none; padding: 4px 0; white-space: nowrap; font-family: "DM Sans", sans-serif; }
     .key-footer { font-size: 11.5px; color: var(--muted); margin-top: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
     .key-footer a { color: var(--green); text-decoration: none; }
-    .key-footer a:hover { text-decoration: underline; }
     .key-saved { font-size: 11px; color: var(--success); background: var(--success-bg); padding: 3px 10px; border-radius: 999px; font-weight: 500; display: none; align-items: center; gap: 5px; }
     .key-saved::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block; }
     .key-clear { font-size: 11px; color: var(--muted); cursor: pointer; background: none; border: none; font-family: "DM Sans", sans-serif; text-decoration: underline; }
     .key-clear:hover { color: var(--danger); }
     .cta { width: 100%; padding: 15px; background: var(--green); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; font-family: "DM Sans", sans-serif; cursor: pointer; letter-spacing: 0.05em; transition: all 0.15s; margin-bottom: 1.25rem; box-shadow: 0 2px 8px rgba(77,124,50,0.3); }
-    .cta:hover { background: var(--green-dark); box-shadow: 0 4px 18px rgba(77,124,50,0.38); transform: translateY(-1px); }
+    .cta:hover { background: var(--green-dark); transform: translateY(-1px); }
     .cta:active { transform: translateY(0) scale(0.99); }
-    .cta:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
+    .cta:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     .loading { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 13px; }
     .spinner { width: 26px; height: 26px; border: 2px solid var(--border-md); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 14px; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-step { font-size: 11px; color: var(--muted); margin-top: 6px; }
     .err { background: var(--danger-bg); color: var(--danger); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; margin-bottom: 1rem; border: 1px solid #f5c6c2; }
     .patient-banner { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--green); border-radius: var(--radius); padding: 1.1rem 1.4rem; margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
     .pinfo { display: flex; flex-direction: column; gap: 3px; }
@@ -85,8 +86,10 @@
     .opt-name { font-size: 13px; font-weight: 500; color: var(--text); }
     .opt-form { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
     .opt-strength { font-size: 12px; color: var(--muted); white-space: nowrap; background: var(--bg); padding: 3px 8px; border-radius: var(--radius-xs); }
-    .rcard-note { padding: 0.7rem 1.4rem; background: #fffef5; font-size: 12px; color: #7a6a30; border-top: 1px solid #f0e8c0; line-height: 1.65; }
+    .rcard-note { padding: 0.7rem 1.4rem; background: var(--warning-bg); font-size: 12px; color: var(--warning); border-top: 1px solid #f0e8c0; line-height: 1.65; }
     .rcard-note::before { content: "Note: "; font-weight: 500; }
+    .no-match { padding: 0.7rem 1.4rem; background: var(--danger-bg); font-size: 12px; color: var(--danger); border-top: 1px solid #f5c6c2; }
+    .source-badge { font-size: 10px; color: var(--success); background: var(--success-bg); padding: 2px 8px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
     .footer { text-align: center; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
     .footer-logo-wrap { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: var(--green-light); border: 1px solid var(--green-mid); margin-bottom: 10px; }
     .footer-logo { width: 36px; height: 36px; object-fit: contain; }
@@ -157,7 +160,7 @@
     <div class="footer">
       <div class="footer-logo-wrap"><img class="footer-logo" src="data:image/png;base64,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" alt="Medicina"></div>
       <div class="footer-name">Medicina Pharmacy</div>
-      <div class="footer-text">Powered by DOH / HAAD UAE Drug Formulary<br>&copy; 2026 Medicina Pharmacy &mdash; All rights reserved</div>
+      <div class="footer-text">Powered by DOH / HAAD UAE Drug Formulary — March 2026<br>&copy; 2026 Medicina Pharmacy &mdash; All rights reserved</div>
       <div class="footer-dev">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" stroke="#c8c8c2"/><path d="M4 6l1.5 1.5L8 4" stroke="#4d7c32" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Developed by <span class="footer-dev-name">Ahmed Omar</span>
@@ -166,10 +169,48 @@
   </div>
 
 <script>
-const KEY_STORAGE="medicina_api_key";
-let b64=null,ftype=null;
-function initKey(){const s=localStorage.getItem(KEY_STORAGE);if(s){document.getElementById("akey").value=s;document.getElementById("key-saved").style.display="inline-flex";document.getElementById("key-clear-btn").style.display="inline";}}
-function onKeyInput(){const v=document.getElementById("akey").value.trim();if(v.startsWith("sk-ant-")&&v.length>20){localStorage.setItem(KEY_STORAGE,v);document.getElementById("key-saved").style.display="inline-flex";document.getElementById("key-clear-btn").style.display="inline";}}
+const KEY_STORAGE = "medicina_api_key";
+let b64=null, ftype=null, haadData=null;
+
+async function loadHAAD() {
+  if (haadData) return haadData;
+  const r = await fetch('/haad_data.json');
+  haadData = await r.json();
+  return haadData;
+}
+
+function searchHAAD(data, genericName, insType) {
+  const query = genericName.toLowerCase().trim();
+  const words = query.split(/[,\s]+/).filter(w => w.length > 3);
+
+  // Find matches - drug must contain ALL key words
+  let matches = data.filter(d => {
+    const g = d.generic.toLowerCase();
+    return words.every(w => g.includes(w)) || g.includes(query);
+  });
+
+  if (matches.length === 0) {
+    // Try partial - at least one key ingredient
+    matches = data.filter(d => {
+      const g = d.generic.toLowerCase();
+      return words.some(w => w.length > 4 && g.includes(w));
+    });
+  }
+
+  const covered = matches.filter(d => d[insType]);
+  const notCovered = matches.filter(d => !d[insType]);
+
+  return { covered, notCovered, total: matches.length };
+}
+
+function initKey(){
+  const s=localStorage.getItem(KEY_STORAGE);
+  if(s){document.getElementById("akey").value=s;document.getElementById("key-saved").style.display="inline-flex";document.getElementById("key-clear-btn").style.display="inline";}
+}
+function onKeyInput(){
+  const v=document.getElementById("akey").value.trim();
+  if(v.startsWith("sk-ant-")&&v.length>20){localStorage.setItem(KEY_STORAGE,v);document.getElementById("key-saved").style.display="inline-flex";document.getElementById("key-clear-btn").style.display="inline";}
+}
 function clearKey(){localStorage.removeItem(KEY_STORAGE);document.getElementById("akey").value="";document.getElementById("key-saved").style.display="none";document.getElementById("key-clear-btn").style.display="none";}
 function ev(e,cls,add){e.preventDefault();document.getElementById("zone").classList[add?"add":"remove"](cls);}
 function drop(e){e.preventDefault();document.getElementById("zone").classList.remove("drag");const f=e.dataTransfer.files[0];if(f)pickFile(f);}
@@ -196,38 +237,136 @@ async function runCheck(){
   if(!k){err.innerHTML='<div class="err">Please enter your Anthropic API key first.</div>';return;}
   if(!b64){err.innerHTML='<div class="err">Please upload a prescription first.</div>';return;}
   const btn=document.getElementById("cbtn");btn.disabled=true;
-  res.innerHTML='<div class="loading"><div class="spinner"></div>Reading prescription…</div>';
+  res.innerHTML='<div class="loading"><div class="spinner"></div>Reading prescription…<div class="loading-step">Extracting drugs from prescription</div></div>';
+
   const isImg=ftype&&ftype.startsWith("image/");const media=ftype||"application/pdf";
   try{
+    // Step 1: Extract drugs from prescription via Claude
     const content=[
       isImg?{type:"image",source:{type:"base64",media_type:media,data:b64}}:{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}},
-      {type:"text",text:"You are a UAE clinical pharmacist. Read this prescription and extract:\n1. Patient full name\n2. Insurance type (Thiqa/Basic/ABM1/ABM7/unknown)\n3. Each drug: generic name in English, strength, dosage form, brand name written (or null)\n\nReply ONLY with valid JSON:\n{\"patient_name\":\"...\",\"insurance_type\":\"thiqa|basic|abm1|abm7|unknown\",\"drugs\":[{\"generic_name\":\"...\",\"strength\":\"...\",\"form\":\"...\",\"brand_written\":\"...\"}]}"}
+      {type:"text",text:"You are a UAE clinical pharmacist. Read this prescription carefully and extract:\n1. Patient full name\n2. Insurance type shown on the card (Thiqa / Basic / ABM1 / ABM7 / unknown)\n3. Each drug prescribed - provide the EXACT generic/scientific name in English as it would appear in a drug formulary\n\nIMPORTANT: For generic names, use standard INN names. For combinations, include all ingredients separated by commas.\n\nReply ONLY with valid JSON:\n{\"patient_name\":\"...\",\"insurance_type\":\"thiqa|basic|abm1|abm7|unknown\",\"drugs\":[{\"generic_name\":\"...\",\"strength\":\"...\",\"form\":\"...\",\"brand_written\":\"...or null\"}]}"}
     ];
     const d1=await apiCall(k,[{role:"user",content}],800);
     let raw1=d1.content.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
     const parsed=JSON.parse(raw1);
-    res.innerHTML='<div class="loading"><div class="spinner"></div>Checking DOH formulary…</div>';
-    const ins=(parsed.insurance_type||"unknown").toLowerCase();
-    const insLabel={thiqa:"Thiqa",basic:"Basic",abm1:"ABM 1",abm7:"ABM 7",unknown:"Not detected"}[ins]||ins;
-    const p2="You are a UAE insurance formulary expert with full knowledge of the DOH/HAAD drug formulary.\nInsurance: "+ins+"\nDrugs: "+JSON.stringify(parsed.drugs)+"\n\nFor EACH drug:\n- Is it covered under "+ins+"?\n- List ALL available covered brand options (package_name, strength, form)\n- If NOT covered, list brands without coverage\n- Note any difference vs what was written\n\nReply ONLY with valid JSON:\n{\"results\":[{\"generic_name\":\"...\",\"covered\":true,\"options\":[{\"package_name\":\"...\",\"strength\":\"...\",\"form\":\"...\"}],\"note\":\"...or null\"}]}";
-    const d2=await apiCall(k,[{role:"user",content:p2}],2000);
+
+    res.innerHTML='<div class="loading"><div class="spinner"></div>Searching HAAD formulary…<div class="loading-step">Loading official DOH drug database</div></div>';
+
+    // Step 2: Load HAAD data and search
+    const haad = await loadHAAD();
+    const ins = (parsed.insurance_type||"unknown").toLowerCase();
+    const insKey = ins === 'abm1' ? 'abm1' : ins === 'abm7' ? 'abm7' : ins === 'basic' ? 'basic' : 'thiqa';
+    const insLabel = {thiqa:"Thiqa",basic:"Basic",abm1:"ABM 1",abm7:"ABM 7",unknown:"Not detected"}[ins]||ins;
+
+    // Step 3: For each drug, search HAAD + use Claude to verify match
+    const drugs = parsed.drugs || [];
+    const drugNames = drugs.map(d => d.generic_name).join(', ');
+
+    res.innerHTML=`<div class="loading"><div class="spinner"></div>Matching against HAAD formulary…<div class="loading-step">Verifying ${drugs.length} drug(s)</div></div>`;
+
+    // Use Claude to normalize generic names for better matching
+    const d2 = await apiCall(k,[{role:"user",content:`Given these drug names from a UAE prescription: ${drugNames}\n\nFor each drug, provide the best search terms to find it in the UAE DOH/HAAD formulary. Use standard INN names. For combinations list ingredients.\n\nReply ONLY with valid JSON:\n{\"normalized\":[{\"original\":\"...\",\"search_terms\":[\"term1\",\"term2\"]}]}`}],600);
     let raw2=d2.content.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
-    const results=JSON.parse(raw2);
-    renderResults(parsed,results.results,insLabel);
+    const normalized = JSON.parse(raw2);
+
+    // Now search HAAD for each drug
+    const results = drugs.map((drug, i) => {
+      const norm = normalized.normalized?.[i];
+      const searchTerms = norm?.search_terms || [drug.generic_name];
+
+      let bestMatches = [];
+      for (const term of searchTerms) {
+        const found = searchHAAD(haad, term, insKey);
+        if (found.covered.length > 0 || found.notCovered.length > 0) {
+          bestMatches = found;
+          break;
+        }
+      }
+
+      if (bestMatches.length === 0) {
+        // Last resort - try first search term
+        bestMatches = searchHAAD(haad, searchTerms[0], insKey);
+      }
+
+      const covered = bestMatches.covered || [];
+      const notCovered = bestMatches.notCovered || [];
+
+      return {
+        generic_name: drug.generic_name,
+        brand_written: drug.brand_written,
+        covered: covered.length > 0,
+        covered_options: covered.slice(0, 10),
+        uncovered_options: notCovered.slice(0, 5),
+        not_found: (covered.length + notCovered.length) === 0
+      };
+    });
+
+    renderResults(parsed, results, insLabel, insKey);
+
   }catch(e){res.innerHTML="";err.innerHTML=`<div class="err">Error: ${e.message}</div>`;}
   finally{btn.disabled=false;}
 }
-function renderResults(parsed,results,insLabel){
-  const covered=results.filter(r=>r.covered).length;
-  let html=`<div class="patient-banner"><div class="pinfo"><div class="pinfo-label">Patient</div><div class="pinfo-value">${parsed.patient_name||"&#8212;"}</div></div><div class="pinfo"><div class="pinfo-label">Insurance</div><div class="pinfo-value">${insLabel}</div></div><div class="pinfo"><div class="pinfo-label">Drugs</div><div class="pinfo-value">${results.length}</div></div><div class="pinfo"><div class="pinfo-label">Covered</div><div class="pinfo-value" style="color:#3a6b24;">${covered} / ${results.length}</div></div></div>`;
-  results.forEach(drug=>{
-    const badge=drug.covered?'<span class="badge badge-ok">&#10003; Covered</span>':'<span class="badge badge-no">Not covered</span>';
-    const opts=(drug.options||[]).map(o=>`<div class="opt-row"><div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form||""}</div></div><div class="opt-strength">${o.strength||""}</div></div>`).join("");
-    html+=`<div class="rcard"><div class="rcard-head"><div class="rcard-name">${drug.generic_name}</div>${badge}</div>${opts?`<div class="rcard-body">${opts}</div>`:""}${drug.note&&drug.note!=="null"?`<div class="rcard-note">${drug.note}</div>`:""}</div>`;
+
+function renderResults(parsed, results, insLabel, insKey) {
+  const covered = results.filter(r => r.covered).length;
+  let html = `<div class="patient-banner">
+    <div class="pinfo"><div class="pinfo-label">Patient</div><div class="pinfo-value">${parsed.patient_name||"&#8212;"}</div></div>
+    <div class="pinfo"><div class="pinfo-label">Insurance</div><div class="pinfo-value">${insLabel}</div></div>
+    <div class="pinfo"><div class="pinfo-label">Drugs</div><div class="pinfo-value">${results.length}</div></div>
+    <div class="pinfo"><div class="pinfo-label">Covered</div><div class="pinfo-value" style="color:#3a6b24;">${covered} / ${results.length}</div></div>
+  </div>`;
+
+  results.forEach(drug => {
+    const badge = drug.covered
+      ? '<span class="badge badge-ok">&#10003; Covered</span>'
+      : '<span class="badge badge-no">Not covered</span>';
+
+    let bodyHtml = '';
+
+    if (drug.not_found) {
+      bodyHtml = '<div class="no-match">No match found in HAAD formulary for this drug</div>';
+    } else if (drug.covered && drug.covered_options.length > 0) {
+      const opts = drug.covered_options.map(o =>
+        `<div class="opt-row">
+          <div>
+            <div class="opt-name">${o.pkg}</div>
+            <div class="opt-form">${o.form}</div>
+          </div>
+          <div class="opt-strength">${o.strength}</div>
+        </div>`
+      ).join('');
+      bodyHtml = `<div class="rcard-body">${opts}</div>`;
+    } else if (!drug.covered && drug.uncovered_options.length > 0) {
+      const opts = drug.uncovered_options.map(o =>
+        `<div class="opt-row">
+          <div>
+            <div class="opt-name">${o.pkg}</div>
+            <div class="opt-form">${o.form}</div>
+          </div>
+          <div class="opt-strength">${o.strength}</div>
+        </div>`
+      ).join('');
+      bodyHtml = `<div class="rcard-body" style="opacity:0.6;">${opts}</div>`;
+    }
+
+    const sourceNote = drug.not_found ? '' : '<div class="rcard-note" style="background:#eef4e9;color:#3a6b24;border-color:#c8ddb8;">Source: DOH/HAAD UAE Official Formulary — March 2026</div>';
+
+    html += `<div class="rcard">
+      <div class="rcard-head">
+        <div class="rcard-name">${drug.generic_name}${drug.brand_written && drug.brand_written !== 'null' ? '<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:6px;">(Written: '+drug.brand_written+')</span>' : ''}</div>
+        ${badge}
+      </div>
+      ${bodyHtml}
+      ${sourceNote}
+    </div>`;
   });
-  document.getElementById("resbox").innerHTML=html;
+
+  document.getElementById("resbox").innerHTML = html;
 }
+
 initKey();
+// Preload HAAD data in background
+loadHAAD().catch(()=>{});
 </script>
 </body>
 </html>
