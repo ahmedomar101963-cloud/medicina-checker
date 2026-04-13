@@ -6,17 +6,28 @@ let haadCache = null;
 function loadHAAD() {
   if (haadCache) return haadCache;
   try {
-    const filePath = join(process.cwd(), 'public', 'haad_data.json');
-    const data = readFileSync(filePath, 'utf8');
-    haadCache = JSON.parse(data);
-    return haadCache;
+    // Try multiple paths - Vercel serves from different locations
+    const paths = [
+      join(process.cwd(), 'public', 'haad_data.json'),
+      join(process.cwd(), 'haad_data.json'),
+      '/var/task/public/haad_data.json',
+    ];
+    for (const p of paths) {
+      try {
+        const data = readFileSync(p, 'utf8');
+        haadCache = JSON.parse(data);
+        console.log('HAAD loaded from:', p, 'Records:', haadCache.length);
+        return haadCache;
+      } catch(e) { continue; }
+    }
+    return null;
   } catch (e) {
+    console.error('HAAD load error:', e.message);
     return null;
   }
 }
 
 function searchDrugs(haad, genericName, insType) {
-  if (!haad) return { covered: [], notCovered: [] };
   const query = genericName.toLowerCase().trim();
   const words = query.split(/[\s,+\/]+/).filter(w => w.length > 3);
   const insMap = { thiqa: 't', basic: 'b', abm1: 'a1', abm7: 'a7' };
@@ -24,15 +35,11 @@ function searchDrugs(haad, genericName, insType) {
 
   let matches = haad.filter(d => {
     const g = d.g;
-    if (words.length === 0) return g.includes(query);
-    return words.every(w => g.includes(w));
+    return words.length === 0 ? g.includes(query) : words.every(w => g.includes(w));
   });
 
   if (matches.length === 0) {
-    matches = haad.filter(d => {
-      const g = d.g;
-      return words.some(w => w.length > 4 && g.includes(w));
-    });
+    matches = haad.filter(d => words.some(w => w.length > 4 && d.g.includes(w)));
   }
 
   const covered = matches.filter(d => d[insKey] === 1).map(d => ({ package_name: d.p, strength: d.s, form: d.f }));
@@ -54,7 +61,7 @@ export default async function handler(req, res) {
     if (action === 'search-haad') {
       const { drugs, insurance } = req.body;
       const haad = loadHAAD();
-      if (!haad) return res.status(500).json({ error: 'HAAD data not available' });
+      if (!haad) return res.status(500).json({ error: 'HAAD data not available on server' });
 
       const results = drugs.map(drug => {
         const found = searchDrugs(haad, drug.generic_name, insurance);
@@ -71,6 +78,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ results });
     }
 
+    // Proxy to Anthropic
     const apiKey = req.headers['x-api-key'];
     if (!apiKey) return res.status(400).json({ error: 'Missing API key' });
 
