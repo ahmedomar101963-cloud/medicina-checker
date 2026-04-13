@@ -16,6 +16,8 @@
       --text: #1a1a18; --muted: #72726e;
       --danger-bg: #fdf0ee; --danger: #c0392b;
       --success-bg: #eef4e9; --success: #3a6b24;
+      --warning-bg: #fffef0; --warning: #92720a;
+      --info-bg: #f0f4ff; --info: #2c4fa3;
       --radius: 16px; --radius-sm: 10px; --radius-xs: 6px;
     }
     body { font-family: "DM Sans", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -36,7 +38,7 @@
     .hero-sub { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 8px; }
     .hero-title { font-family: "Cormorant Garamond", serif; font-size: 30px; font-weight: 500; color: #fff; text-align: center; margin-bottom: 6px; }
     .hero-desc { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 0.06em; }
-    .main { max-width: 580px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .main { max-width: 600px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem 1.6rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04); }
     .card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
     .upload-zone { border: 1.5px dashed var(--border-md); border-radius: var(--radius-sm); padding: 2.2rem 1rem; text-align: center; cursor: pointer; transition: all 0.18s; background: #fafaf8; }
@@ -73,21 +75,35 @@
     .pinfo { display: flex; flex-direction: column; gap: 3px; }
     .pinfo-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
     .pinfo-value { font-size: 13px; font-weight: 500; color: var(--text); }
+
+    /* Result Cards */
     .rcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-    .rcard-head { display: flex; align-items: center; gap: 10px; padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); background: #fafaf8; }
-    .rcard-name { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
-    .rcard-written { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 6px; }
-    .badge { font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 999px; flex-shrink: 0; }
-    .badge-ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--green-mid); }
-    .badge-no { background: var(--danger-bg); color: var(--danger); border: 1px solid #f5c6c2; }
-    .rcard-body { padding: 0.4rem 1.4rem 0.9rem; }
-    .opt-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+    .rcard-head { display: flex; align-items: flex-start; gap: 10px; padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); background: #fafaf8; }
+    .rcard-head-info { flex: 1; }
+    .rcard-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+    .rcard-meta { font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px; }
+    .rcard-meta span { display: flex; align-items: center; gap: 3px; }
+    .badge { font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 999px; flex-shrink: 0; white-space: nowrap; }
+    .badge-ok  { background: var(--success-bg); color: var(--success); border: 1px solid var(--green-mid); }
+    .badge-no  { background: var(--danger-bg);  color: var(--danger);  border: 1px solid #f5c6c2; }
+    .badge-na  { background: var(--warning-bg); color: var(--warning); border: 1px solid #f0e090; }
+
+    /* Section inside card */
+    .rcard-section { padding: 0.5rem 1.4rem 0.8rem; }
+    .section-title { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; margin-top: 8px; }
+    .opt-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); gap: 8px; }
     .opt-row:last-child { border-bottom: none; }
     .opt-name { font-size: 13px; font-weight: 500; color: var(--text); }
-    .opt-form { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+    .opt-form { font-size: 11px; color: var(--muted); margin-top: 1px; }
     .opt-strength { font-size: 12px; color: var(--muted); white-space: nowrap; background: var(--bg); padding: 3px 8px; border-radius: var(--radius-xs); }
-    .rcard-source { padding: 0.6rem 1.4rem; background: var(--green-light); font-size: 11px; color: var(--success); border-top: 1px solid var(--green-mid); }
+
+    /* Different strength note */
+    .diff-note { font-size: 11px; color: var(--warning); background: var(--warning-bg); border: 1px solid #f0e090; border-radius: var(--radius-xs); padding: 6px 10px; margin-bottom: 6px; }
+
+    /* Source tag */
+    .rcard-source { padding: 0.55rem 1.4rem; background: var(--green-light); font-size: 11px; color: var(--success); border-top: 1px solid var(--green-mid); }
     .rcard-notfound { padding: 0.7rem 1.4rem; background: var(--danger-bg); font-size: 12px; color: var(--danger); border-top: 1px solid #f5c6c2; }
+
     .footer { text-align: center; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
     .footer-logo-wrap { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: var(--green-light); border: 1px solid var(--green-mid); margin-bottom: 10px; }
     .footer-logo { width: 36px; height: 36px; object-fit: contain; }
@@ -186,7 +202,7 @@ function rmFile(){b64=null;ftype=null;document.getElementById("zone").style.disp
 function toggleKey(){const i=document.getElementById("akey");const s=i.type==="password";i.type=s?"text":"password";i.nextElementSibling.textContent=s?"Hide":"Show";}
 
 async function claudeCall(k,messages,mx){
-  const r=await fetch("/api/proxy",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:mx||800,messages})});
+  const r=await fetch("/api/proxy",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":k,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:mx||1000,messages})});
   if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"API error");}
   return r.json();
 }
@@ -204,25 +220,35 @@ async function runCheck(){
   if(!k){err.innerHTML='<div class="err">Please enter your Anthropic API key first.</div>';return;}
   if(!b64){err.innerHTML='<div class="err">Please upload a prescription first.</div>';return;}
   const btn=document.getElementById("cbtn");btn.disabled=true;
-  res.innerHTML='<div class="loading"><div class="spinner"></div>Reading prescription…<div class="loading-step">Extracting drug names</div></div>';
+  res.innerHTML='<div class="loading"><div class="spinner"></div>Reading prescription…<div class="loading-step">Extracting drug names and strengths</div></div>';
 
   const isImg=ftype&&ftype.startsWith("image/");const media=ftype||"application/pdf";
   try{
     const content=[
       isImg?{type:"image",source:{type:"base64",media_type:media,data:b64}}:{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}},
-      {type:"text",text:"You are a UAE clinical pharmacist. Read this prescription and extract:\n1. Patient full name\n2. Insurance type (Thiqa/Basic/ABM1/ABM7/unknown)\n3. Each drug - provide the exact INN generic name in English as it appears in pharmacopoeias. For combinations list ALL active ingredients.\n\nReply ONLY with valid JSON:\n{\"patient_name\":\"...\",\"insurance_type\":\"thiqa|basic|abm1|abm7|unknown\",\"drugs\":[{\"generic_name\":\"...\",\"strength\":\"...\",\"form\":\"...\",\"brand_written\":\"...or null\"}]}"}
+      {type:"text",text:`You are a UAE clinical pharmacist. Read this prescription carefully and extract:
+1. Patient full name
+2. Insurance type shown on the insurance card (Thiqa / Basic / ABM1 / ABM7 / unknown)
+3. For each drug:
+   - generic_name: exact INN generic name in English. For combinations, list ALL active ingredients separated by commas. Example: "Dorzolamide Hydrochloride, Timolol Maleate"
+   - strength: exact strength as written on prescription. Example: "50 mcg/ml" or "20mg/ml,5mg/ml"
+   - form: dosage form. Example: "Eye Drops"
+   - brand_written: brand name written on prescription (or null)
+
+Reply ONLY with valid JSON:
+{"patient_name":"...","insurance_type":"thiqa|basic|abm1|abm7|unknown","drugs":[{"generic_name":"...","strength":"...","form":"...","brand_written":"..."}]}`}
     ];
 
-    const d1=await claudeCall(k,[{role:"user",content}],800);
-    let raw1=d1.content.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
+    const d1=await claudeCall(k,[{role:"user",content}],1000);
+    let raw1=d1.content.map(c=>c.text||"").join("").replace(/\`\`\`json|\`\`\`/g,"").trim();
     const parsed=JSON.parse(raw1);
 
-    res.innerHTML='<div class="loading"><div class="spinner"></div>Searching HAAD formulary…<div class="loading-step">Checking official DOH database</div></div>';
+    res.innerHTML='<div class="loading"><div class="spinner"></div>Matching against HAAD formulary…<div class="loading-step">Checking exact generic name and strength</div></div>';
 
     const ins=(parsed.insurance_type||"unknown").toLowerCase();
     const insLabel={thiqa:"Thiqa",basic:"Basic",abm1:"ABM 1",abm7:"ABM 7",unknown:"Not detected"}[ins]||ins;
 
-    const searchResult = await haadSearch(parsed.drugs || [], ins);
+    const searchResult=await haadSearch(parsed.drugs||[], ins);
     renderResults(parsed, searchResult.results, insLabel);
 
   }catch(e){res.innerHTML="";err.innerHTML=`<div class="err">Error: ${e.message}</div>`;}
@@ -230,37 +256,112 @@ async function runCheck(){
 }
 
 function renderResults(parsed, results, insLabel){
-  const covered=results.filter(r=>r.covered).length;
-  let html=`<div class="patient-banner">
+  const coveredCount = results.filter(r => r.covered).length;
+
+  let html = `<div class="patient-banner">
     <div class="pinfo"><div class="pinfo-label">Patient</div><div class="pinfo-value">${parsed.patient_name||"&#8212;"}</div></div>
     <div class="pinfo"><div class="pinfo-label">Insurance</div><div class="pinfo-value">${insLabel}</div></div>
     <div class="pinfo"><div class="pinfo-label">Drugs</div><div class="pinfo-value">${results.length}</div></div>
-    <div class="pinfo"><div class="pinfo-label">Covered</div><div class="pinfo-value" style="color:#3a6b24;">${covered} / ${results.length}</div></div>
+    <div class="pinfo"><div class="pinfo-label">Covered</div><div class="pinfo-value" style="color:#3a6b24;">${coveredCount} / ${results.length}</div></div>
   </div>`;
 
-  results.forEach(drug=>{
-    const badge=drug.covered?'<span class="badge badge-ok">&#10003; Covered</span>':'<span class="badge badge-no">Not covered</span>';
-    const written=drug.brand_written&&drug.brand_written!=="null"?`<span class="rcard-written">(${drug.brand_written})</span>`:"";
-
-    let body="";
-    if(drug.not_found){
-      body=`<div class="rcard-notfound">Drug not found in HAAD formulary — may require manual verification</div>`;
+  results.forEach(drug => {
+    // تحديد الـ badge
+    let badge, headBg;
+    if (drug.not_found) {
+      badge = '<span class="badge badge-na">Not in formulary</span>';
+      headBg = '';
+    } else if (!drug.exact_match) {
+      badge = '<span class="badge badge-na">Different strength</span>';
+      headBg = '';
+    } else if (drug.covered) {
+      badge = '<span class="badge badge-ok">&#10003; Covered</span>';
+      headBg = '';
     } else {
-      const opts=drug.covered?drug.covered_options:drug.uncovered_options;
-      const rows=(opts||[]).map(o=>`<div class="opt-row"><div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div><div class="opt-strength">${o.strength}</div></div>`).join("");
-      if(rows) body=`<div class="rcard-body"${drug.covered?"":" style='opacity:0.65;'"}">${rows}</div>`;
+      badge = '<span class="badge badge-no">Not covered</span>';
+      headBg = '';
     }
 
-    const source=drug.not_found?"":`<div class="rcard-source">&#10003; Source: DOH/HAAD UAE Formulary — March 2026</div>`;
+    const written = drug.brand_written && drug.brand_written !== 'null'
+      ? `<span style="font-size:11px;color:var(--muted);margin-left:6px;">(${drug.brand_written})</span>`
+      : '';
 
-    html+=`<div class="rcard">
-      <div class="rcard-head"><div class="rcard-name">${drug.generic_name}${written}</div>${badge}</div>
-      ${body}${source}
+    const strengthMeta = drug.strength ? `<span>&#9642; ${drug.strength}</span>` : '';
+    const formMeta = drug.form ? `<span>&#9642; ${drug.form}</span>` : '';
+
+    let body = '';
+
+    if (drug.not_found) {
+      // مش موجود في الشيت خالص
+      body = `<div class="rcard-notfound">This drug is not found in the HAAD formulary. Please verify manually.</div>`;
+
+    } else if (!drug.exact_match) {
+      // نفس الاسم العلمي بس تركيز مختلف
+      body = `<div class="rcard-section">
+        <div class="diff-note">&#9888; Exact strength "${drug.strength}" not found. Available strengths below:</div>`;
+
+      if (drug.similar_covered.length > 0) {
+        body += `<div class="section-title">Available &amp; Covered</div>`;
+        body += drug.similar_covered.map(o => `
+          <div class="opt-row">
+            <div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div>
+            <div class="opt-strength">${o.strength}</div>
+          </div>`).join('');
+      }
+
+      if (drug.similar_not_covered.length > 0) {
+        body += `<div class="section-title" style="color:var(--danger);">Available but Not Covered</div>`;
+        body += drug.similar_not_covered.map(o => `
+          <div class="opt-row" style="opacity:0.65;">
+            <div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div>
+            <div class="opt-strength">${o.strength}</div>
+          </div>`).join('');
+      }
+
+      body += `</div>`;
+
+    } else if (drug.covered) {
+      // مطابق 100% ومغطى
+      body = `<div class="rcard-section">
+        <div class="section-title">Covered options — exact match</div>
+        ${drug.covered_options.map(o => `
+          <div class="opt-row">
+            <div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div>
+            <div class="opt-strength">${o.strength}</div>
+          </div>`).join('')}
+      </div>`;
+
+    } else {
+      // مطابق 100% بس مش مغطى
+      body = `<div class="rcard-section">
+        <div class="section-title" style="color:var(--danger);">Not covered — exact match</div>
+        ${drug.not_covered_options.map(o => `
+          <div class="opt-row" style="opacity:0.65;">
+            <div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div>
+            <div class="opt-strength">${o.strength}</div>
+          </div>`).join('')}
+      </div>`;
+    }
+
+    const source = drug.not_found ? '' :
+      `<div class="rcard-source">&#10003; Source: DOH/HAAD UAE Formulary — March 2026</div>`;
+
+    html += `<div class="rcard">
+      <div class="rcard-head">
+        <div class="rcard-head-info">
+          <div class="rcard-name">${drug.generic_name}${written}</div>
+          <div class="rcard-meta">${strengthMeta}${formMeta}</div>
+        </div>
+        ${badge}
+      </div>
+      ${body}
+      ${source}
     </div>`;
   });
 
-  document.getElementById("resbox").innerHTML=html;
+  document.getElementById("resbox").innerHTML = html;
 }
+
 initKey();
 </script>
 </body>
