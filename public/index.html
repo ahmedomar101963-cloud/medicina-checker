@@ -226,17 +226,7 @@ async function runCheck(){
   try{
     const content=[
       isImg?{type:"image",source:{type:"base64",media_type:media,data:b64}}:{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}},
-      {type:"text",text:`You are a UAE clinical pharmacist. Read this prescription carefully and extract:
-1. Patient full name
-2. Insurance type shown on the insurance card (Thiqa / Basic / ABM1 / ABM7 / unknown)
-3. For each drug:
-   - generic_name: exact INN generic name in English. For combinations, list ALL active ingredients separated by commas. Example: "Dorzolamide Hydrochloride, Timolol Maleate"
-   - strength: exact strength as written on prescription. Example: "50 mcg/ml" or "20mg/ml,5mg/ml"
-   - form: dosage form. Example: "Eye Drops"
-   - brand_written: brand name written on prescription (or null)
-
-Reply ONLY with valid JSON:
-{"patient_name":"...","insurance_type":"thiqa|basic|abm1|abm7|unknown","drugs":[{"generic_name":"...","strength":"...","form":"...","brand_written":"..."}]}`}
+      {type:"text",text:`You are a UAE clinical pharmacist. Read this prescription carefully and extract:\n1. Patient full name\n2. Insurance type (Thiqa/Basic/ABM1/ABM7/unknown) — look at Entitlement or Insurance Plan fields\n3. For each drug:\n   - generic_name: INN scientific name. For combinations, list ALL active ingredients with commas. E.g. "Iron, Folic Acid, Cyanocobalamin"\n   - strength: ONLY chemical concentration like "50 mcg/ml" or "30mg". Never use duration (90 days), quantity (3 BOX), or dosage frequency. Use "" if no chemical strength.\n   - form: Tablets, Capsules, Eye Drops, etc.\n   - brand_written: trade/brand name like ELEVIT or PULMICORT, or null\n\nCRITICAL: 90 days / 3 BOX / 1 Tablet Daily are NOT strengths. Always convert brand names to INN generic names.\n\nReply ONLY with valid JSON:\n{"patient_name":"...","insurance_type":"thiqa|basic|abm1|abm7|unknown","drugs":[{"generic_name":"...","strength":"...","form":"...","brand_written":"..."}]}`}
     ];
 
     const d1=await claudeCall(k,[{role:"user",content}],1000);
