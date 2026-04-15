@@ -279,16 +279,23 @@ function renderResults(parsed,results,insLabel){
     if(drug.not_found){
       body=`<div class="rcard-body"><div class="not-found-note">Not found in HAAD formulary. Manual verification required.</div></div>`;
     } else if(drug.similar_only){
-      // Different strength — show available options
+      // Different strength — show all available options with explanation
       body='<div class="rcard-body">';
-      body+=`<div class="diff-note">&#9888; Prescribed strength "${drug.strength||'—'}" not found in HAAD. Available options below — verify with prescriber.</div>`;
+      const prescStr = drug.prescribed_strength || drug.strength || '—';
+      body+=`<div class="diff-note">&#9888; Exact strength <strong>${prescStr}</strong> not found in HAAD formulary.<br>Same generic name available with different strengths — verify with prescriber before dispensing.</div>`;
       if(drug.similar_covered.length>0){
-        body+=`<div class="section-title">Available &amp; Covered (different strength)</div>`;
-        body+=drug.similar_covered.map(o=>`<div class="opt-row"><div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div><div class="opt-strength">${o.strength}</div></div>`).join("");
+        body+=`<div class="section-title">All covered options — same generic, different strength</div>`;
+        body+=drug.similar_covered.map(o=>{
+          const tag=o.is_prescribed_brand?'<span class="prescribed-tag">&#9733; Prescribed</span>':"";
+          return `<div class="opt-row"><div><div class="opt-name">${o.package_name}${tag}</div><div class="opt-form">${o.form}</div></div><div class="opt-strength">${o.strength}</div></div>`;
+        }).join("");
       }
       if(drug.similar_not_covered.length>0){
-        body+=`<div class="section-title red">Available but Not Covered (different strength)</div>`;
-        body+=drug.similar_not_covered.map(o=>`<div class="opt-row" style="opacity:.65"><div><div class="opt-name">${o.package_name}</div><div class="opt-form">${o.form}</div></div><div class="opt-strength">${o.strength}</div></div>`).join("");
+        body+=`<div class="section-title red">Available but not covered — same generic, different strength</div>`;
+        body+=drug.similar_not_covered.map(o=>{
+          const tag=o.is_prescribed_brand?'<span class="prescribed-tag">&#9733; Prescribed</span>':"";
+          return `<div class="opt-row" style="opacity:.65"><div><div class="opt-name">${o.package_name}${tag}</div><div class="opt-form">${o.form}</div></div><div class="opt-strength">${o.strength}</div></div>`;
+        }).join("");
       }
       body+="</div>";
     } else if(drug.covered){
@@ -299,6 +306,14 @@ function renderResults(parsed,results,insLabel){
         const tag=o.is_prescribed_brand?'<span class="prescribed-tag">&#9733; Prescribed</span>':"";
         return `<div class="opt-row"><div><div class="opt-name">${o.package_name}${tag}</div><div class="opt-form">${o.form}</div></div><div class="opt-strength">${o.strength}</div></div>`;
       }).join("");
+      // Also show not-covered exact matches if any
+      if(drug.not_covered_options.length>0){
+        body+=`<div class="section-title red">Also available but not covered</div>`;
+        body+=drug.not_covered_options.map(o=>{
+          const tag=o.is_prescribed_brand?'<span class="prescribed-tag">&#9733; Prescribed</span>':"";
+          return `<div class="opt-row" style="opacity:.65"><div><div class="opt-name">${o.package_name}${tag}</div><div class="opt-form">${o.form}</div></div><div class="opt-strength">${o.strength}</div></div>`;
+        }).join("");
+      }
       body+="</div>";
     } else {
       // Not covered — exact match
