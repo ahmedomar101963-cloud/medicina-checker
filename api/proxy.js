@@ -131,7 +131,9 @@ function search(genericName, strength, form, brandName, insType) {
     byBrand = HAAD.filter(d => d.p_lower===bq || d.p_lower.includes(bq) || bq.includes(d.p_lower));
   }
 
-  const brandItems = byBrand.map(d => ({...toItem(d,true), covered:d[key]===1}));
+  const byBrandForm = byBrand.filter(d => formMatches(form, d.f));
+  const brandPool = byBrandForm.length > 0 ? byBrandForm : byBrand;
+  const brandItems = brandPool.map(d => ({...toItem(d,true), covered:d[key]===1}));
   const allMatches = byGeneric.length>0 ? byGeneric : byBrand;
 
   // Step 4: filter by form
