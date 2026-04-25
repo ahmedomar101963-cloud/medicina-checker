@@ -218,26 +218,35 @@ async function runCheck(){
   try{
     const content=[
       isImg?{type:"image",source:{type:"base64",media_type:media,data:b64}}:{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}},
-      {type:"text",text:`You are a UAE clinical pharmacist. Read this prescription and extract:
+      {type:"text",text:`You are a UAE clinical pharmacist expert at reading prescriptions — including rotated, handwritten, scanned, or low-quality PDFs.
+
+STEP 1 — READ CAREFULLY:
+- Look at every part of the document: header, table rows, drug names, dosage columns
+- If the document appears rotated or sideways, mentally rotate it and re-read
+- Extract ONLY what is ACTUALLY WRITTEN — never invent or assume drug names
+
+STEP 2 — EXTRACT:
 1. Patient full name
-2. Insurance type (Thiqa/Basic/ABM1/ABM7/unknown) from any field: Entitlement, Insurance Plan, Ins.Com.Plan, card type
-3. For each prescribed drug:
-   - generic_name: scientific INN names ONLY — no numbers, no mg/mcg/IU units. Strip all concentrations from the name. For combinations, list each ingredient separated by commas.
+2. Insurance type (Thiqa/Basic/ABM1/ABM7/unknown) — look for: Entitlement, Insurance Plan, Inst.Company, card type, or plan name
+
+3. For each prescribed drug row in the prescription table:
+   - generic_name: scientific INN name(s) ONLY — absolutely no numbers, no mg/mcg/IU. For combinations write all ingredients separated by commas.
+     CORRECT: "Glycerin"
+     CORRECT: "Urea, Vitamin E"
      CORRECT: "EPA (Eicosapentaenoic Acid), Natural Fish Oil, Omega 3 Fatty Acids"
-     WRONG:   "EPA 180mg, Fish Oil 1000mg, Omega 3 380mg"
-     CORRECT: "Cholecalciferol, Menaquinone"
-     WRONG:   "Vitamin D3 400 IU, Vitamin K2 90 mcg"
-   - strength: chemical concentrations with units ONLY (e.g. "180 mg,1000 mg,380 mg" or "400 IU,90 mcg"). NEVER include: days, box count, daily/oral/route instructions. Use "" if no chemical strength written.
-   - form: dosage form only (Tablets, Capsules, Eye Drops, Suspension, etc.)
-   - brand_written: any trade/brand name written alongside the generic (e.g. ELEVIT, PULMICORT, COSOPT) or null
+     WRONG: "Glycerin 50ml" or "EPA 180mg"
+   - strength: chemical concentration with units ONLY (e.g. "0.25 mcg", "5%", "180 mg,1000 mg"). Use "" if only duration/quantity written (30 days, 1 bottle, etc.)
+   - form: dosage form (Cream, Lotion, Capsules, Tablets, Eye Drops, Solution, etc.)
+   - brand_written: brand/trade name if written (e.g. ALLERGIKA, CALCIJEX) or null
 
-RULES:
-- generic_name = names only, NO numbers
-- strength = numbers+units only, NO names
-- "3 Month", "90", "180", "2 BOX" alone are NOT strengths
-- Always extract generic INN even when brand is written
+CRITICAL RULES:
+- generic_name = ingredient names ONLY, zero numbers
+- strength = numbers+units ONLY — "30 days", "50ml Bottle", "1 Bottle" are NOT strengths
+- Extract EVERY drug row from the table — do not skip any
+- NEVER hallucinate drug names — only write what you can actually read
+- If a word is unclear, write your best reading — do NOT substitute a different drug name
 
-Reply ONLY with valid JSON:
+Reply ONLY with valid JSON — no explanation, no markdown:
 {"patient_name":"...","insurance_type":"thiqa|basic|abm1|abm7|unknown","drugs":[{"generic_name":"...","strength":"...","form":"...","brand_written":"..."}]}`}
     ];
     const d1=await claudeCall(k,[{role:"user",content}],1200);
@@ -246,7 +255,16 @@ Reply ONLY with valid JSON:
     res.innerHTML='<div class="loading"><div class="spinner"></div>Matching against HAAD formulary…<div class="loading-step">Checking generic name, strength & dosage form</div></div>';
     const ins=(parsed.insurance_type||"unknown").toLowerCase();
     const insLabel={thiqa:"Thiqa",basic:"Basic",abm1:"ABM 1",abm7:"ABM 7",unknown:"Not detected"}[ins]||ins;
-    const sr=await haadSearch(parsed.drugs||[],ins);
+    // Deduplicate drugs by generic_name to prevent same drug showing twice
+    const rawDrugs = parsed.drugs || [];
+    const seenGeneric = new Set();
+    const uniqueDrugs = rawDrugs.filter(d => {
+      const key = (d.generic_name||'').toLowerCase().trim();
+      if (!key || seenGeneric.has(key)) return false;
+      seenGeneric.add(key);
+      return true;
+    });
+    const sr=await haadSearch(uniqueDrugs,ins);
     renderResults(parsed,sr.results,insLabel);
   }catch(e){res.innerHTML="";err.innerHTML=`<div class="err">Error: ${e.message}</div>`}
   finally{btn.disabled=false}
