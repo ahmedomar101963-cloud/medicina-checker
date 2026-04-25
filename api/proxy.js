@@ -2,10 +2,7 @@ const HAAD = [{"p":"10% W/V DEXTRAN 40 IN 5% W/V DEXTROSE","p_lower":"10% w/v de
 
 // ═══════════════════════════════════════════════════════════
 // HAAD UAE Drug Formulary — April 2026 (Effective 02-04-2026)
-// Unique records: 16,831 (grouped from 20,149 active rows)
-// Grouping key: Package Name + Generic Name + Strength + Dosage Form
-// Coverage rule: MAX across duplicates — Yes wins over No
-// Zero duplicate entries ✅
+// 16,831 unique entries | Zero duplicates | Coverage: MAX rule
 // ═══════════════════════════════════════════════════════════
 
 const SYNONYMS = {
@@ -31,22 +28,50 @@ const SYNONYMS = {
   'thiamine':        ['thiamine','vitamin b1'],
   'riboflavin':      ['riboflavin','vitamin b2'],
   'pyridoxine':      ['pyridoxine','vitamin b6'],
+  'glycerin':        ['glycerin','glycerine','glycerol'],
+  'glycerine':       ['glycerin','glycerine','glycerol'],
+  'glycerol':        ['glycerin','glycerine','glycerol'],
+  'urea':            ['urea'],
 };
 
-function ingredientMatchesGeneric(ingredient, genericLower) {
-  const l = ingredient.toLowerCase().trim();
+function getSynonyms(term) {
+  const l = term.toLowerCase().trim();
   for (const [key, syns] of Object.entries(SYNONYMS)) {
-    if (l.includes(key)) return syns.some(syn => genericLower.includes(syn));
+    if (l === key || l.includes(key)) return syns;
   }
-  return genericLower.includes(l);
+  return [l];
+}
+
+function ingredientMatchesGeneric(ingredient, genericLower) {
+  const syns = getSynonyms(ingredient);
+  return syns.some(syn => genericLower.includes(syn));
+}
+
+// Count comma-separated ingredients in a HAAD generic name
+function countHaadIngredients(genericLower) {
+  return genericLower.split(',').map(s=>s.trim()).filter(s=>s.length>2).length;
+}
+
+// Key rule: if searching N ingredients, result must have similar count
+// Prevents "Glycerin" (1) matching "Glycerin, Glyceryl Polyacrylate, Laminaria" (3)
+function ingredientCountOk(searchIngredients, genericLower) {
+  const searchN = searchIngredients.length;
+  const resultN = countHaadIngredients(genericLower);
+  if (searchN === 1 && resultN > 2) return false;  // single → no multi-ingredient results
+  if (searchN === 2 && resultN > 4) return false;  // two → no 5+ ingredient results
+  return true;
 }
 
 function isChemicalStrength(s) {
   if (!s || s.trim() === '') return false;
   const l = s.toLowerCase().trim();
-  const nonChem = ['day','box','tablet','capsule','daily','oral','week','month','dose','sachet','time','vial'];
-  if (nonChem.some(w => l.includes(w)) && !l.match(/\d+\s*(mg|mcg|iu|%|ml|g\b)/i)) return false;
-  return /\d/.test(l);
+  // Reject pure volumes and durations
+  if (/^\d+\s*ml$/.test(l)) return false;
+  if (/^\d+\s*(days?|months?|weeks?|box|bottle|vial|sachet)$/i.test(l)) return false;
+  const nonChem = ['day','box','bottle','vial','sachet','pump','daily','oral','week','month','time'];
+  if (nonChem.some(w => l.includes(w)) && !l.match(/\d+\s*(mg|mcg|iu|%|g\/|ml\/)/i)) return false;
+  // Must have a unit to be chemical
+  return /\d/.test(l) && /mg|mcg|iu|%|\/ml|\/g/.test(l);
 }
 
 function normalizeStrength(s) {
@@ -57,23 +82,37 @@ function normalizeStrength(s) {
 function normalizeForm(f) {
   if (!f || f.trim()==='') return '';
   const l = f.toLowerCase();
-  if (l.includes('tablet')) return 'tablet';
+  // Topical family — all interchangeable
+  if (l.includes('cream')||l.includes('gel')||l.includes('lotion')||
+      l.includes('ointment')||l.includes('topical')||l.includes('cutaneous')) return 'topical';
+  if (l.includes('tablet')||l.includes('caplet')||l.includes('coated')) return 'tablet';
   if (l.includes('capsule')) return 'capsule';
   if (l.includes('eye drop')||l.includes('ophthalmic')) return 'eyedrop';
-  if (l.includes('injection')||l.includes('infusion')) return 'injection';
+  if (l.includes('nasal')) return 'nasal';
+  if (l.includes('ear')) return 'ear';
+  if (l.includes('injection')||l.includes('infusion')||l.includes('intravenous')) return 'injection';
   if (l.includes('solution')||l.includes('syrup')||l.includes('suspension')||l.includes('oral drop')) return 'liquid';
-  if (l.includes('cream')||l.includes('gel')||l.includes('ointment')) return 'topical';
   if (l.includes('spray')||l.includes('inhaler')||l.includes('nebuli')) return 'inhaler';
   if (l.includes('patch')) return 'patch';
-  if (l.includes('supposi')) return 'suppository';
+  if (l.includes('supposi')||l.includes('rectal')) return 'suppository';
   if (l.includes('powder')) return 'powder';
-  if (l.includes('drop')&&!l.includes('eye')) return 'drops';
+  if (l.includes('foam')) return 'foam';
   return l.trim();
+}
+
+function formMatches(prescribed, haadForm) {
+  if (!prescribed || prescribed.trim()==='') return true;
+  const nP = normalizeForm(prescribed);
+  const nH = normalizeForm(haadForm);
+  if (!nP) return true;
+  return nP === nH;
 }
 
 function splitIngredients(name) {
   const cleaned = name.toLowerCase()
     .replace(/\s+\d[\d\s.,]*\s*(mg|mcg|iu|%|ml|g\b|units?)[^\w]*/gi,' ')
+    .replace(/\[.*?\]/g,' ')
+    .replace(/\(.*?\)/g, m => m.includes('acid')||m.includes('amine')||m.includes('ol)')||m.length<30 ? m : ' ')
     .trim();
   return cleaned.split(/\s*,\s*/).map(s=>s.trim()).filter(s=>s.length>2);
 }
@@ -87,15 +126,7 @@ function strengthsMatch(prescribed, haadStrength) {
   const nums1 = n1.split('|').map(p=>p.replace(/[^0-9.]/g,'')).filter(Boolean).sort();
   const nums2 = n2.split('|').map(p=>p.replace(/[^0-9.]/g,'')).filter(Boolean).sort();
   if (!nums1.length||!nums2.length) return true;
-  return nums1.every(n => nums2.some(m => n===m || m.includes(n)));
-}
-
-function formMatches(prescribed, haadForm) {
-  if (!prescribed||prescribed.trim()==='') return true;
-  const nP = normalizeForm(prescribed);
-  const nH = normalizeForm(haadForm);
-  if (!nP) return true;
-  return nP===nH;
+  return nums1.every(n => nums2.some(m => n===m || m.startsWith(n)));
 }
 
 function toItem(d, isPrescribed) {
@@ -107,56 +138,64 @@ function search(genericName, strength, form, brandName, insType) {
   const ingredients  = splitIngredients(genericName);
   const chemStrength = isChemicalStrength(strength) ? strength : '';
 
-  // Step 1: all ingredients must match (with synonym expansion)
+  // Step 1: All ingredients match + ingredient count compatible
   let byGeneric = HAAD.filter(d =>
     ingredients.length > 0 &&
-    ingredients.every(ing => ingredientMatchesGeneric(ing, d.g))
+    ingredients.every(ing => ingredientMatchesGeneric(ing, d.g)) &&
+    ingredientCountOk(ingredients, d.g)
   );
 
-  // Step 2: fallback — first matching ingredient
-  if (byGeneric.length===0 && ingredients.length>1) {
+  // Step 2: Relax count check if no results
+  if (byGeneric.length===0 && ingredients.length>0) {
+    byGeneric = HAAD.filter(d =>
+      ingredients.every(ing => ingredientMatchesGeneric(ing, d.g))
+    );
+  }
+
+  // Step 3: First ingredient fallback for complex combinations
+  if (byGeneric.length===0 && ingredients.length>2) {
     for (const ing of ingredients) {
-      const l = ing.toLowerCase();
-      const entry = Object.entries(SYNONYMS).find(([k]) => l.includes(k));
-      const terms = entry ? entry[1] : [l];
-      const p = HAAD.filter(d => terms.some(t => d.g.includes(t)));
+      const syns = getSynonyms(ing);
+      const p = HAAD.filter(d => syns.some(t => d.g.includes(t)));
       if (p.length>0) { byGeneric=p; break; }
     }
   }
 
-  // Step 3: brand name fallback
+  // Step 4: Brand name search (form-filtered)
   let byBrand = [];
   if (brandName && brandName!=='null' && brandName.trim()!=='') {
     const bq = brandName.toLowerCase().trim();
-    byBrand = HAAD.filter(d => d.p_lower===bq || d.p_lower.includes(bq) || bq.includes(d.p_lower));
+    const allBrand = HAAD.filter(d =>
+      d.p_lower===bq || d.p_lower.includes(bq) || bq.includes(d.p_lower)
+    );
+    const formBrand = allBrand.filter(d => formMatches(form, d.f));
+    byBrand = formBrand.length>0 ? formBrand : allBrand;
   }
 
-  const byBrandForm = byBrand.filter(d => formMatches(form, d.f));
-  const brandPool = byBrandForm.length > 0 ? byBrandForm : byBrand;
-  const brandItems = brandPool.map(d => ({...toItem(d,true), covered:d[key]===1}));
+  const brandItems = byBrand.map(d => ({...toItem(d,true), covered:d[key]===1}));
   const allMatches = byGeneric.length>0 ? byGeneric : byBrand;
 
-  // Step 4: filter by form
+  // Step 5: Form filter
   const formOk = allMatches.filter(d => formMatches(form, d.f));
   const pool   = formOk.length>0 ? formOk : allMatches;
 
-  // Step 5: exact vs similar strength
+  // Step 6: Strength split
   const exactPool   = pool.filter(d =>  strengthsMatch(chemStrength, d.s));
   const similarPool = pool.filter(d => !strengthsMatch(chemStrength, d.s));
 
-  // Step 6: split by coverage
+  // Step 7: Coverage split
   let exactCovered    = exactPool.filter(d=>d[key]===1).map(d=>toItem(d,false));
   let exactNotCovered = exactPool.filter(d=>d[key]===0).map(d=>toItem(d,false));
   let simCovered      = similarPool.filter(d=>d[key]===1).map(d=>toItem(d,false));
   let simNotCovered   = similarPool.filter(d=>d[key]===0).map(d=>toItem(d,false));
 
-  // Step 7: covered wins — remove from not-covered if name appears in covered
+  // Step 8: Covered wins
   const eCovSet = new Set(exactCovered.map(i=>i.package_name.toLowerCase()));
   const sCovSet = new Set(simCovered.map(i=>i.package_name.toLowerCase()));
   exactNotCovered = exactNotCovered.filter(i=>!eCovSet.has(i.package_name.toLowerCase()));
   simNotCovered   = simNotCovered.filter(i=>!sCovSet.has(i.package_name.toLowerCase()));
 
-  // Step 8: prescribed brand first, no duplicates
+  // Step 9: Brand first, deduplicated
   if (brandItems.length>0) {
     const bSet = new Set(brandItems.map(i=>i.package_name.toLowerCase()));
     exactCovered    = exactCovered.filter(i=>!bSet.has(i.package_name.toLowerCase()));
@@ -190,18 +229,12 @@ export default async function handler(req, res) {
     if (action==='search-haad') {
       const {drugs, insurance} = req.body;
       const results = drugs.map(drug => {
-        const r = search(
-          drug.generic_name  ||'',
-          drug.strength      ||'',
-          drug.form          ||'',
-          drug.brand_written ||'',
-          insurance
-        );
+        const r = search(drug.generic_name||'', drug.strength||'', drug.form||'', drug.brand_written||'', insurance);
         return {
           generic_name:         drug.generic_name,
-          strength:             drug.strength      ||'',
-          form:                 drug.form          ||'',
-          brand_written:        drug.brand_written ||null,
+          strength:             drug.strength||'',
+          form:                 drug.form||'',
+          brand_written:        drug.brand_written||null,
           covered:              r.exactCovered.length>0,
           exact_match:          r.hasExact,
           similar_only:         r.hasSimilarOnly,
