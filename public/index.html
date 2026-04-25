@@ -218,40 +218,62 @@ async function runCheck(){
   try{
     const content=[
       isImg?{type:"image",source:{type:"base64",media_type:media,data:b64}}:{type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}},
-      {type:"text",text:`You are a UAE clinical pharmacist expert at reading prescriptions — including rotated, handwritten, scanned, or low-quality PDFs.
+      {type:"text",text:`You are a UAE clinical pharmacist expert at reading all types of prescriptions — including rotated, dark, handwritten, or low-quality scanned documents.
 
-STEP 1 — READ CAREFULLY:
-- Look at every part of the document: header, table rows, drug names, dosage columns
-- If the document appears rotated or sideways, mentally rotate it and re-read
-- Extract ONLY what is ACTUALLY WRITTEN — never invent or assume drug names
+HOW TO READ DIFFICULT DOCUMENTS:
+- If rotated 90° or sideways: rotate mentally, columns become rows
+- If dark/low contrast: focus on recognizable text patterns
+- The prescription TABLE has rows — each row = one drug
+- Columns are usually: Generic Name | Brand | Form | Route | Duration | Qty
 
-STEP 2 — EXTRACT:
-1. Patient full name
-2. Insurance type (Thiqa/Basic/ABM1/ABM7/unknown) — look for: Entitlement, Insurance Plan, Inst.Company, card type, or plan name
+EXTRACT:
+1. Patient full name (from header)
+2. Insurance type (Thiqa/Basic/ABM1/ABM7/unknown) — look for: Entitlement, Insurance Plan, Inst.Company, NATIONAL HEALTH INSURANCE, card type
 
-3. For each prescribed drug row in the prescription table:
-   - generic_name: scientific INN name(s) ONLY — absolutely no numbers, no mg/mcg/IU. For combinations write all ingredients separated by commas.
-     CORRECT: "Glycerin"
-     CORRECT: "Urea, Vitamin E"
-     CORRECT: "EPA (Eicosapentaenoic Acid), Natural Fish Oil, Omega 3 Fatty Acids"
-     WRONG: "Glycerin 50ml" or "EPA 180mg"
-   - strength: chemical concentration with units ONLY (e.g. "0.25 mcg", "5%", "180 mg,1000 mg"). Use "" if only duration/quantity written (30 days, 1 bottle, etc.)
-   - form: dosage form (Cream, Lotion, Capsules, Tablets, Eye Drops, Solution, etc.)
-   - brand_written: brand/trade name if written (e.g. ALLERGIKA, CALCIJEX) or null
+3. For EACH drug row — extract INDEPENDENTLY, do not mix data between rows:
+   - generic_name: INN scientific name(s) ONLY. No numbers, no mg/mcg/%, no ml. Combinations: separate with commas.
+     CORRECT: "Glycerin" | "Urea, Vitamin E" | "Calcitriol" | "Budesonide"
+     WRONG: "Glycerin 50ml" | "Urea 5%" | "Calcitriol 0.25 mcg"
+   - strength: chemical concentration WITH unit from THIS drug's row ONLY (e.g. "5%", "0.25 mcg", "0.25 mg/ml")
+     NEVER use: bottle size (50ml, 200ml), duration (30 days), quantity (1 bottle, 3 boxes)
+     NEVER copy strength from another drug's row
+     Use "" if no chemical concentration is written for this drug
+   - form: dosage form from THIS row (Cream, Lotion, Tablets, Capsules, Eye Drops, Nasal Spray, etc.)
+   - brand_written: brand/trade name if clearly written for THIS drug (e.g. ALLERGIKA, CALCIJEX) else null
 
 CRITICAL RULES:
-- generic_name = ingredient names ONLY, zero numbers
-- strength = numbers+units ONLY — "30 days", "50ml Bottle", "1 Bottle" are NOT strengths
-- Extract EVERY drug row from the table — do not skip any
-- NEVER hallucinate drug names — only write what you can actually read
-- If a word is unclear, write your best reading — do NOT substitute a different drug name
+- Each drug is INDEPENDENT — never mix names, strengths, or forms between rows
+- generic_name = ingredient names ONLY, absolutely zero numbers or units
+- strength = ONLY if a chemical concentration (mg/mcg/IU/%) is EXPLICITLY written for THIS specific drug
+- "50ml Bottle", "200ml", "30 Days", "1 Bottle" = NOT strength → use ""
+- NEVER hallucinate — write only what you can actually read
+- If document is completely unreadable, return drugs: []
 
-Reply ONLY with valid JSON — no explanation, no markdown:
+Reply ONLY with valid JSON:
 {"patient_name":"...","insurance_type":"thiqa|basic|abm1|abm7|unknown","drugs":[{"generic_name":"...","strength":"...","form":"...","brand_written":"..."}]}`}
     ];
     const d1=await claudeCall(k,[{role:"user",content}],1200);
     let raw1=d1.content.map(c=>c.text||"").join("").replace(/\`\`\`json|\`\`\`/g,"").trim();
     const parsed=JSON.parse(raw1);
+
+    // If 0 drugs extracted — PDF might be unreadable (dark/rotated/low-quality)
+    if (!parsed.drugs || parsed.drugs.length === 0) {
+      res.innerHTML='';
+      err.innerHTML='<div class="err" style="line-height:1.8">'+
+        '<strong>Could not extract drug information from this prescription.</strong><br>'+
+        'This usually happens when the PDF is:<br>'+
+        '&nbsp;&nbsp;• Rotated or sideways<br>'+
+        '&nbsp;&nbsp;• Too dark or low resolution<br>'+
+        '&nbsp;&nbsp;• A scanned image with poor quality<br><br>'+
+        '<strong>Please try:</strong><br>'+
+        '&nbsp;&nbsp;1. Take a clear photo of the prescription instead of scanning<br>'+
+        '&nbsp;&nbsp;2. Make sure the prescription is upright (not rotated)<br>'+
+        '&nbsp;&nbsp;3. Use good lighting for photos<br>'+
+        '&nbsp;&nbsp;4. Upload as JPG or PNG image instead of PDF'+
+        '</div>';
+      return;
+    }
+
     res.innerHTML='<div class="loading"><div class="spinner"></div>Matching against HAAD formulary…<div class="loading-step">Checking generic name, strength & dosage form</div></div>';
     const ins=(parsed.insurance_type||"unknown").toLowerCase();
     const insLabel={thiqa:"Thiqa",basic:"Basic",abm1:"ABM 1",abm7:"ABM 7",unknown:"Not detected"}[ins]||ins;
