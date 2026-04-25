@@ -143,6 +143,19 @@
     .ref-cat-badge{font-size:10px;font-weight:500;padding:3px 9px;border-radius:999px;background:var(--bg);color:var(--muted);border:1px solid var(--border);white-space:nowrap}
     .no-results{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:13px}
     .pa-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;background:#fdf0ee;color:#c0392b;border:1px solid #f5c6c2}
+    /* ── CLINICAL CONTEXT (Option 3) ── */
+    .clinical-panel{background:linear-gradient(135deg,#f0f7eb 0%,#f7f7f5 100%);border-top:1px solid var(--green-mid);padding:.8rem 1.4rem}
+    .clinical-panel-title{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .clinical-panel-title::before{content:"";display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%}
+    .clinical-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    .clinical-item{font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+    .clinical-item b{color:var(--text);font-weight:500;font-size:12px}
+    .clinical-icd{font-size:11.5px;color:var(--muted);line-height:1.7;padding:6px 10px;background:rgba(77,124,50,.06);border-radius:var(--radius-xs);border-left:2px solid var(--green)}
+    .clinical-icd b{color:var(--green);font-weight:600}
+    .clinical-pa{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#c0392b;background:#fdf0ee;padding:4px 10px;border-radius:999px;border:1px solid #f5c6c2;margin-bottom:8px}
+    .clinical-notes{font-size:11px;color:var(--warn);background:var(--warn-bg);border-radius:var(--radius-xs);padding:5px 10px;border:1px solid #f0e090;margin-top:6px}
+    .clinical-source{font-size:10px;color:var(--muted);margin-top:8px;opacity:.7}
+    @media(max-width:480px){.clinical-grid{grid-template-columns:1fr}}
 
     /* ── FOOTER ── */
     .footer{text-align:center;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border)}
@@ -298,7 +311,7 @@ function covPill(val, label) {
   return `<span class="cov-pill ${y?'cov-y':'cov-n'}">${label}: ${y?'✓':'—'}</span>`;
 }
 
-function renderRef() {
+async function renderRef() {
   const q = (document.getElementById('ref-search').value||'').toLowerCase().trim();
   let drugs = REF_DRUGS;
   if(activeCat!=='All') drugs = drugs.filter(d=>d.category===activeCat);
@@ -310,28 +323,122 @@ function renderRef() {
   );
 
   const summary = document.getElementById('ref-summary');
-  summary.style.display = 'block';
-  summary.textContent = `Showing ${drugs.length} drug${drugs.length!==1?'s':''}`+(activeCat!=='All'?` in ${activeCat}`:'')+(q?` matching "${q}"`:'')+'.';
-
   const container = document.getElementById('ref-results');
-  if(drugs.length===0){
-    container.innerHTML='<div class="no-results">No drugs found. Try a different search.</div>';
+
+  // If no results in reference AND user is searching → try HAAD full formulary
+  if(drugs.length===0 && q && activeCat==='All') {
+    container.innerHTML='<div class="loading"><div class="spinner"></div>Searching full HAAD formulary…</div>';
+    summary.style.display='none';
+    try {
+      const r = await fetch('/api/proxy',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-action':'search-brand'},
+        body:JSON.stringify({query:q, insurance:'thiqa'})
+      });
+      const data = await r.json();
+      const haadResults = data.results||[];
+      if(haadResults.length>0) {
+        summary.style.display='block';
+        summary.innerHTML=`<span style="color:var(--warn)">&#9432;</span> Not found in Drug Reference — showing <strong>${haadResults.length} result${haadResults.length!==1?'s':''}</strong> from full HAAD formulary (${haadResults.length} entries).`;
+        container.innerHTML = haadResults.map(d=>haadCard(d)).join('');
+      } else {
+        summary.style.display='block';
+        summary.textContent='No results found in Drug Reference or HAAD formulary.';
+        container.innerHTML='<div class="no-results">No drugs found. Try a different search term.</div>';
+      }
+    } catch(e) {
+      container.innerHTML='<div class="no-results">No results in Drug Reference. Could not reach HAAD formulary.</div>';
+    }
     return;
   }
 
-  // Group by category if All
+  summary.style.display='block';
+  summary.textContent=`Showing ${drugs.length} drug${drugs.length!==1?'s':''}`+(activeCat!=='All'?` in ${activeCat}`:'')+(q?` matching "${q}"`:'')+'.';
+
+  if(drugs.length===0){
+    container.innerHTML='<div class="no-results">No drugs found. Try a different search or category.</div>';
+    return;
+  }
+
   let html='';
   if(activeCat==='All' && !q) {
-    const bycat = {};
+    const bycat={};
     drugs.forEach(d=>{if(!bycat[d.category])bycat[d.category]=[];bycat[d.category].push(d);});
     Object.keys(bycat).sort().forEach(cat=>{
       html+=`<div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1.5rem 0 .5rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)">${cat} <span style="font-weight:400;color:var(--muted)">(${bycat[cat].length})</span></div>`;
       html+=bycat[cat].map(d=>drugCard(d)).join('');
     });
   } else {
-    html = drugs.map(d=>drugCard(d)).join('');
+    html=drugs.map(d=>drugCard(d)).join('');
   }
-  container.innerHTML = html;
+  container.innerHTML=html;
+}
+
+// Find best matching Reference entry for a HAAD result
+function findRefEnrichment(genericLower) {
+  const STOP = new Set(['with','and','the','for','from','into','that','this','have',
+    'been','also','more','drug','each','than','then','they','them','were','will',
+    'your','which','their','there','what','when','where','acid','salt','oxide',
+    'hydro','mono','poly','chloride','sulfate','phosphate','citrate','carbonate']);
+
+  function keywords(str) {
+    return new Set(str.toLowerCase()
+      .replace(/[()[\],]/g,' ').split(/\s+/)
+      .filter(w => w.length > 3 && !STOP.has(w) && !/^\d+$/.test(w)));
+  }
+
+  const haadKw = keywords(genericLower);
+  if (haadKw.size === 0) return null;
+
+  let bestScore = 0, bestMatch = null;
+  for (const ref of REF_DRUGS) {
+    const refKw = keywords(ref.generic);
+    if (refKw.size === 0) continue;
+    const overlap = [...haadKw].filter(w => refKw.has(w)).length;
+    const score = overlap / Math.max(Math.min(haadKw.size, refKw.size), 1);
+    if (score > bestScore) { bestScore = score; bestMatch = ref; }
+  }
+  return bestScore >= 0.35 ? bestMatch : null;
+}
+
+function haadCard(d) {
+  const ref = findRefEnrichment(d.generic_lower || d.generic.toLowerCase());
+  const icd  = ref?.icd10 || '';
+  const labs = ref?.labs  || '';
+  const pa   = ref?.pa    || '';
+  const cat  = ref?.category || '';
+  const spec = ref?.specialty || '';
+  const qty  = ref?.qty   || '';
+  const notes = ref?.notes || '';
+  const paTag = pa && pa.toLowerCase().includes('yes')
+    ? '<span class="pa-badge">PA Required</span>' : '';
+
+  return `<div class="ref-drug-card">
+    <div class="ref-drug-head">
+      <div style="flex:1">
+        <div class="ref-generic">${d.package_name}</div>
+        <div class="ref-brand">${d.generic}</div>
+      </div>
+      ${paTag}
+      <span class="ref-cat-badge" style="background:var(--green-light);color:var(--success);border-color:var(--green-mid)">${cat||'HAAD formulary'}</span>
+    </div>
+    <div class="ref-cov-row">
+      <span class="cov-pill ${d.thiqa==='Yes'?'cov-y':'cov-n'}">Thiqa: ${d.thiqa==='Yes'?'✓':'—'}</span>
+      <span class="cov-pill ${d.basic==='Yes'?'cov-y':'cov-n'}">Basic: ${d.basic==='Yes'?'✓':'—'}</span>
+      <span class="cov-pill ${d.abm1==='Yes'?'cov-y':'cov-n'}">ABM 1: ${d.abm1==='Yes'?'✓':'—'}</span>
+      <span class="cov-pill ${d.abm7==='Yes'?'cov-y':'cov-n'}">ABM 7: ${d.abm7==='Yes'?'✓':'—'}</span>
+    </div>
+    <div class="ref-meta-grid">
+      ${d.strength?`<div class="ref-meta-item"><span>Strength</span><b>${d.strength}</b></div>`:''}
+      ${d.form?`<div class="ref-meta-item"><span>Form</span><b>${d.form}</b></div>`:''}
+      ${spec?`<div class="ref-meta-item"><span>Specialty</span><b>${spec}</b></div>`:''}
+      ${labs?`<div class="ref-meta-item"><span>Required Labs</span><b>${labs}</b></div>`:''}
+      ${qty?`<div class="ref-meta-item"><span>Qty Limit</span><b>${qty}</b></div>`:''}
+    </div>
+    ${icd?`<div class="ref-icd"><b>ICD-10:</b> ${icd}</div>`:''}
+    ${notes?`<div class="ref-notes">&#9432; ${notes}</div>`:''}
+    ${ref?`<div style="font-size:10px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">&#9432; Clinical data matched from Reference via generic name</div>`:''}
+  </div>`;
 }
 
 function drugCard(d) {
@@ -554,7 +661,32 @@ function renderResults(parsed,results,insLabel){
       body+="</div>";
     }
 
-    const source=drug.not_found?"":'<div class="rcard-source">&#10003; Source: DOH/HAAD UAE Formulary — April 2026</div>';
+    const source=drug.not_found?'':'<div class="rcard-source">&#10003; Source: DOH/HAAD UAE Formulary — April 2026</div>';
+
+    // ── Option 3: Clinical Context enrichment ──
+    const refInfo = findRefEnrichment(drug.generic_name);
+    let clinicalPanel = '';
+    if(refInfo) {
+      const paHtml = refInfo.pa && refInfo.pa.toLowerCase().includes('yes')
+        ? '<div class="clinical-pa">&#9888; Prior Authorization Required</div>' : '';
+      const gridItems = [
+        refInfo.drug_class ? `<div class="clinical-item"><span>Drug class</span><b>${refInfo.drug_class}</b></div>` : '',
+        refInfo.specialty  ? `<div class="clinical-item"><span>Specialty</span><b>${refInfo.specialty}</b></div>` : '',
+        refInfo.labs       ? `<div class="clinical-item"><span>Required labs</span><b>${refInfo.labs}</b></div>` : '',
+        refInfo.qty        ? `<div class="clinical-item"><span>Qty limit</span><b>${refInfo.qty}</b></div>` : '',
+      ].filter(Boolean).join('');
+      const icdHtml = refInfo.icd10
+        ? `<div class="clinical-icd"><b>ICD-10 covered:</b> ${refInfo.icd10}</div>` : '';
+      const notesHtml = refInfo.notes
+        ? `<div class="clinical-notes">&#9432; ${refInfo.notes}</div>` : '';
+      clinicalPanel = `<div class="clinical-panel">
+        <div class="clinical-panel-title">Clinical Context</div>
+        ${paHtml}
+        ${gridItems ? `<div class="clinical-grid">${gridItems}</div>` : ''}
+        ${icdHtml}${notesHtml}
+        <div class="clinical-source">&#9432; ${refInfo.category} reference — April 2026</div>
+      </div>`;
+    }
 
     html+=`<div class="rcard">
       <div class="rcard-head">
@@ -564,7 +696,7 @@ function renderResults(parsed,results,insLabel){
         </div>
         ${badge}
       </div>
-      ${body}${source}
+      ${body}${source}${clinicalPanel}
     </div>`;
   });
 
